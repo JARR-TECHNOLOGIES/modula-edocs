@@ -2,9 +2,8 @@
 set -e
 
 REQUIRED_ENVS="
-MONGO_CLUSTER
-MONGO_USERNAME
-MONGO_PASSWORD
+FILES_API_KEY
+FILES_API_SECRET
 "
 
 fail_envs() {
@@ -31,11 +30,6 @@ for var in $REQUIRED_ENVS; do
 done
 
 [ -n "$missing" ] && fail_envs "$missing"
-
-# Basic format validation
-echo "$MONGO_CLUSTER" | grep -Eq 'mongodb\.net' || fail_invalid "MONGO_CLUSTER" "must look like *.mongodb.net"
-[ -n "$MONGO_USERNAME" ] || fail_invalid "MONGO_USERNAME" "cannot be empty"
-[ "${#MONGO_PASSWORD}" -ge 8 ] || fail_invalid "MONGO_PASSWORD" "must be at least 8 characters"
 
 # Defaults for Gunicorn tunables
 WORKERS="${GUNICORN_WORKERS:-1}"

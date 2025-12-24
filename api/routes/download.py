@@ -1,9 +1,8 @@
-from typing import List, Optional
+from typing import Optional
 
 from flask import send_file
 from flask_smorest import Blueprint, abort
 
-from config import Config
 from routes.schemas.download import DownloadRequestSchema
 
 blp = Blueprint(
@@ -26,17 +25,19 @@ def _resolve_file_path(clave: str, file_type: str) -> Optional[str]:
 @blp.route("/<string:clave>", methods=["GET"], strict_slashes=False)
 @blp.arguments(DownloadRequestSchema, location="query", as_kwargs=True)
 def download_file(clave: str, **query_kwargs):
-    file_types: List[str] = query_kwargs.get("file_types") or []
+    # Validate clave length
+    if len(clave) != 50:
+        abort(400, message="Invalid 'clave'")
 
-    # default to all allowed types if none specified
-    search_types = file_types or list(Config.ALLOWED_FILE_TYPES)
+    # Get requested file type
+    requested_type: Optional[str] = query_kwargs.get("ft")
 
-    for ft in search_types:
-        path = _resolve_file_path(clave, ft, Config.FILES_ROOT)
-        if path:
-            try:
-                return send_file(path, as_attachment=True)
-            except Exception:
-                abort(500, message="Could not send the file")
+    # Try to resolve the file path
+    path = _resolve_file_path(clave, requested_type)
+    if path:
+        try:
+            return send_file(path, as_attachment=True)
+        except Exception:
+            abort(500, message="Could not send the file")
 
     abort(404, message="Could not find the requested file")

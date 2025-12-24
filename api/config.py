@@ -7,8 +7,8 @@ class Config:
     # Application Settings
     PROPAGATE_EXCEPTIONS = True
     SESSION_TYPE = "filesystem"
-    ALLOWED_FILE_TYPES = {"pdf", "xml", "pos", "mh_xml", "mr_xml"}
     FILES_ROOT = os.getenv("FILES_ROOT", "/gcp-bucket")
+    STAGE_FILES_ROOT = os.getenv("STAGE_FILES_ROOT", "/tmp/stage")
 
     # API Settings
     API_TITLE = "Modula Files API"
@@ -18,3 +18,7 @@ class Config:
 
     # Upload Settings
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024  # 2GB
+
+    # Simple header-based auth
+    API_KEY = os.getenv("FILES_API_KEY", "")
+    API_SECRET = os.getenv("FILES_API_SECRET", "")

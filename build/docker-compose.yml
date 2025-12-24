@@ -15,14 +15,25 @@ services:
 
     volumes:
       - /gcp-bucket-dev:/gcp-bucket
+      - /tmp/modula-stage:/tmp/stage
+      - ../api:/app/api
+
+    networks:
+      modula_shared_net:
+        ipv4_address: 172.30.0.30
 
     mem_limit: 512m
     mem_reservation: 512m
     cpus: "0.5"
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/pos/api/healthz"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
       interval: 20s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  modula_shared_net:
+    driver: bridge
+    external: true

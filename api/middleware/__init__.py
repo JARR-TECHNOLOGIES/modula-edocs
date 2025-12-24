@@ -8,6 +8,7 @@ from middleware.logging import add_logging_middleware
 from middleware.security import add_security_headers_middleware
 from middleware.errors import add_error_handlers_middleware
 from middleware.response_wrapper import add_response_wrapper_middleware
+from middleware.auth import add_api_key_auth_middleware
 
 
 def init_middleware(app: Flask) -> None:
@@ -30,6 +31,7 @@ def init_middleware(app: Flask) -> None:
     add_ip_extraction_middleware(app)
     add_request_timing_middleware(app)
     add_logging_middleware(app)
+    add_api_key_auth_middleware(app)
 
     # AFTER REQUEST middlewares
     add_response_wrapper_middleware(app)

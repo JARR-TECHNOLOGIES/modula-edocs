@@ -42,8 +42,10 @@ RUN chown -R modula:modula /app
 COPY build/nginx.conf /etc/nginx/nginx.conf
 COPY build/modsecurity.conf /etc/nginx/modsecurity/modsecurity.conf
 COPY build/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY build/*.sh /app/infra/
-RUN chmod +x /app/infra/*.sh
+COPY build/*.sh /app/build/
+RUN chmod +x /app/build/*.sh
 
 EXPOSE 8080
+
+ENTRYPOINT ["/app/build/entrypoint.sh"]
 CMD ["supervisord", "-n"]

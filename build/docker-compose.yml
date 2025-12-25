@@ -14,8 +14,8 @@ services:
       - "8081:8080"
 
     volumes:
-      - /gcp-bucket-dev:/gcp-bucket
-      - /tmp/modula-stage:/tmp/stage
+      - gcp-bucket-dev:/gcp-bucket
+      - modula-stage:/tmp/stage
       - ../api:/app/api
 
     networks:
@@ -37,3 +37,9 @@ networks:
   modula_shared_net:
     driver: bridge
     external: true
+
+volumes:
+  gcp-bucket-dev:
+    driver: local
+  modula-stage:
+    driver: local

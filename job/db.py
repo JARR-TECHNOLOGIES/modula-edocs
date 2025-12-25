@@ -1,4 +1,3 @@
-
 import os
 import threading
 from typing import Optional
@@ -6,7 +5,7 @@ from typing import Optional
 from pymongo import MongoClient, errors
 from pymongo.server_api import ServerApi
 
-from extensions.logging import get_logger
+from job.logging import get_logger
 logger = get_logger(__name__)
 
 _CLIENT: Optional[MongoClient] = None

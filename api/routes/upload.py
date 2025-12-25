@@ -5,6 +5,8 @@ from flask_smorest import Blueprint, abort
 from pathlib import Path
 from extensions.logging import get_logger
 from extensions.db import get_client
+from api.utils.time import from_local_to_utc, get_timestamp
+from datetime import timedelta
 from routes.schemas.upload import MoveToBucketRequestSchema
 from config import Config
 
@@ -105,6 +107,12 @@ def move_to_bucket(payload: dict):
     # Select DB
     db = client[customer_id]
 
+    staged_oids = {}
+
+    now_local = get_timestamp()
+    now_utc = from_local_to_utc(now_local)
+    three_hours_ago_utc = now_utc - timedelta(hours=3)
+
     # Define collections
     collections_str = [
         "edocs_facturas_electronicas",
@@ -113,8 +121,12 @@ def move_to_bucket(payload: dict):
         "edocs_ordenes_internas",
         "edocs_proformas",
     ]
-
-    find_query = {
+    
+    # Define query to find documents with staged files and older than or equal to 3 hours
+    query = {
+        "edoc_json.FechaEmision": {
+            "$lte": three_hours_ago_utc
+        },
         "$or": [
             {"files.pdf.status": "staged"},
             {"files.html.status": "staged"},
@@ -123,22 +135,23 @@ def move_to_bucket(payload: dict):
             {"files.mr_xml.status": "staged"},
         ]
     }
-    staged_oids = set()
-
+    
     # Access collections
     for coll_str in collections_str:
         coll = db.get_collection(coll_str)
 
-        pending_docs = coll.find(find_query, {"clave": 1, "files": 1})
+        # Find documents with staged files
+        pending_docs = coll.find(query, {"clave": 1, "files": 1})
 
         for doc in pending_docs:
             clave = doc.get("clave")
             files = doc.get("files", {})
 
-            for file_type, file_info in files.items():
-                if file_info.get("status") == "staged":
-                    filename = file_info.get("filename")
-                    binary_b64 = file_info.get("binary_b64")
+            # Process each file type
+            for _, file_data in files.items():
+                if file_data.get("status") == "staged":
+                    filename = file_data.get("filename")
+                    binary_b64 = file_data.get("binary")
 
                     success, error_msg = stage_file(
                         customer_id=customer_id,
@@ -148,23 +161,59 @@ def move_to_bucket(payload: dict):
                     )
 
                     if success:
-                        staged_oids.add(doc["_id"])
+                        if coll_str not in staged_oids:
+                            staged_oids[coll_str] = set()
+                            staged_oids[coll_str].add(doc["_id"])
+                        else:
+                            staged_oids[coll_str].add(doc["_id"])
                     else:
                         logger.error(f"Failed to stage file {filename} for clave={clave}: {error_msg}")
 
-    # Here you would implement the logic to move staged files to the bucket.
-    # For demonstration, we will just log and return success.
-
+    # If no staged files found, return early
+    if not staged_oids:
+        logger.info(f"No staged files found older than 3 hours for customer_id={customer_id}.")
+        return {
+            "ok": True,
+            "message": "No staged files to move",
+            "code": "200",
+            "data": {},
+        }, 200
+    
+    # Move staged files to bucket
     logger.info(f"Moving staged files for customer_id={customer_id} to bucket...")
+    
+    success, error_msg = save_staged_files(customer_id=customer_id)
 
-    # Simulate moving files
-    # In a real implementation, you would call the necessary functions here.
+    if not success:
+        logger.error(f"Error moving staged files to bucket for customer_id={customer_id}: {error_msg}")
+        abort(500, message=f"Error moving staged files to bucket: {error_msg}")
 
-    logger.info(f"Successfully moved staged files for customer_id={customer_id} to bucket.")
+    logger.info(f"Successfully moved staged files to bucket for customer_id={customer_id}.")
+
+    logger.info(f"Updating document statuses in DB for customer_id={customer_id}...")
+    # Update document statuses in DB
+    for coll_str, oids in staged_oids.items():
+        coll = db.get_collection(coll_str)
+        result = coll.update_many(
+            {
+                "_id": {
+                    "$in": list(oids)
+                },
+            },
+            {
+                "$set": {
+                    "files.$[file].status": "saved_to_bucket",
+                    "files.$[file].moved_at": now_local,
+                    "files.$[file].binary": None
+                }
+            },
+            array_filters=[{"file.status": "staged"}],
+        )
+        logger.info(f"Updated {result.modified_count} documents in collection {coll_str} for customer_id={customer_id}.")
 
     return {
         "ok": True,
-        "message": "Move to bucket initiated",
+        "message": "Move to bucket completed successfully",
         "code": "201",
         "data": {},
     }, 201

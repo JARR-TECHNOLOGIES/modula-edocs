@@ -5,5 +5,5 @@ flask-smorest==0.42.3
 flask-session==0.8.0
 marshmallow>=3.14.1
 apispec[marshmallow]==6.8.4
-pymongo[srv]==4.1.1
+pymongo[srv]==4.15.5
 python-dateutil==2.8.2

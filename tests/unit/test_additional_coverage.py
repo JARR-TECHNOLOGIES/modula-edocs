@@ -111,6 +111,11 @@ def test_response_wrapper_and_errors(monkeypatch):
     passthrough = app.after_funcs[0](resp)
     assert passthrough is resp
 
+    # Skip wrapping errors
+    err_resp = Response(json={"code": 404, "message": "fail"}, status_code=404)
+    err_passthrough = app.after_funcs[0](err_resp)
+    assert err_passthrough is err_resp
+
     # Wrap dict without ok
     resp2 = Response(json={"hello": "world"}, headers={"Keep": "yes"})
     wrapped = app.after_funcs[0](resp2)

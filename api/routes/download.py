@@ -26,16 +26,16 @@ def download_file(**query_kwargs):
     tar_path: Optional[str] = query_kwargs.get("tar_path")
 
     # Define the regex pattern to extract relative tar path
-    tar_rel_regex = r"((?:stg|prd)-modula-\d{5}/\d{2}/\d{2}/\d{2}/\d{3}/\d{2}_\d{2}-\d{2}\.tar\.gz)$"
+    tar_rel_regex = r"((?:stg|prd)-modula-\d{5}/\d{2}/\d{2}/\d{2}/\d{3}_\d{2}-\d{2}\.tar\.gz)$"
     
     # Extract relative tar path
     tar_rel_search = re.search(tar_rel_regex, tar_path)
     if not tar_rel_search:
-        abort(400, message="Invalid 'tar_path' format")
+        abort(400, message="Invalid 'tar_path' format - dnmep")
     
     tar_rel_path = tar_rel_search.group(1)
     if not tar_rel_path:
-        abort(400, message="Invalid 'tar_path' format")
+        abort(400, message="Invalid 'tar_path' format - cnerp")
 
     # Construct absolute tar path
     tar_abs_path = os.path.join(Config.FILES_ROOT, tar_rel_path)

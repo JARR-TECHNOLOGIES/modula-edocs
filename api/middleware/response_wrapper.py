@@ -8,6 +8,10 @@ def add_response_wrapper_middleware(app):
         if response.is_json:
             body = response.get_json(silent=True)
 
+            # Do not wrap error responses; let error handlers return their own shape.
+            if response.status_code >= 400:
+                return response
+
             if isinstance(body, dict) and "ok" not in body:
                 wrapped = {
                     "ok": True,

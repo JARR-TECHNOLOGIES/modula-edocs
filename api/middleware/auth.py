@@ -7,6 +7,10 @@ from config import Config
 def add_api_key_auth_middleware(app):
     @app.before_request
     def _check_api_key():
+        # Skip health check endpoint
+        if request.path == "/healthz":
+            return
+        
         expected_key = Config.API_KEY
         expected_secret = Config.API_SECRET
 

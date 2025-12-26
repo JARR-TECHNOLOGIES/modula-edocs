@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Prevent Python from buffering logs
 ENV PYTHONUNBUFFERED=1

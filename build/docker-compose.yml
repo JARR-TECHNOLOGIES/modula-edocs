@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  modula:
+  modula-edocs:
     container_name: modula_files_stack
     build:
       context: ..
